@@ -25,23 +25,26 @@ def init_db():
 
 init_db()
 
+# Função inteligente para achar a pasta front-end onde quer que ela esteja
+def get_frontend_dir():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # Se estiver local (dentro da pasta back-end), sobe um nível
+    if os.path.basename(base_dir) == 'back-end':
+        return os.path.abspath(os.path.join(base_dir, '..', 'front-end'))
+    # Se estiver no Render (tudo na raiz), busca direto a pasta front-end
+    return os.path.abspath(os.path.join(base_dir, 'front-end'))
 
 @app.route('/')
 def serve_index():
-    # os.path.abspath limpa o caminho removendo o '..' e evita o erro 404 no Render
-    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'front-end'))
-    return send_from_directory(frontend_dir, 'index.html')
-
+    return send_from_directory(get_frontend_dir(), 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'front-end'))
-    return send_from_directory(frontend_dir, path)
+    return send_from_directory(get_frontend_dir(), path)
 
 @app.route('/api/avaliacao', methods=['POST'])
 def salvar_avaliacao():
     data = request.get_json()
-    
     projeto = data.get('projeto')
     estrelas = data.get('estrelas')
     comentario = data.get('comentario')
@@ -61,7 +64,6 @@ def salvar_avaliacao():
         return jsonify({'status': 'sucesso', 'mensagem': 'Avaliação enviada com sucesso!'}), 201
     except Exception as e:
         return jsonify({'status': 'erro', 'mensagem': f'Erro interno: {str(e)}'}), 500
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
